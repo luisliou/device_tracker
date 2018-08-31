@@ -1,0 +1,16 @@
+hosts:
+  - a:
+      class: OpenWRTRouter
+      ip: 10.0.0.1
+  - b:
+      class: OpenWRTRouter
+      ip: 10.0.0.2
+  - c:
+      class: TPLinkRouter
+      ip: 10.0.0.3
+      args: ' /home/luis/tpshell/login_tp.sh cookie.txt USER PASS 192.168.90.1 | sed -n ''/AllMACs\:/,$p'' | sed -n ''/AllMACs\:/!p'''
+mqtt:
+  host: 192.168.0.1
+  port: 1883
+  user: 'USER'
+  pass: 'PASS'
