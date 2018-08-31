@@ -5,12 +5,6 @@ import paho.mqtt.client as mqtt
 import yaml
 import codecs
 
-hosts = ['10.0.0.1', '10.0.0.2']
-mqtt_host = '192.168.0.1'
-mqtt_port = 1883
-mqtt_user = 'test'
-mqtt_pass = 'test'
-
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     global scan_mac
@@ -66,7 +60,7 @@ class TPLinkRouter(BaseRouter):
 f = codecs.open(r'config.yaml', 'r',  encoding="utf-8")
 conf = yaml.load(f)
 f.close()
-print(conf)
+#print(conf)
 all_routers=[]
 for host in conf['hosts']:
   ip=host.values()[0]['ip']
@@ -101,9 +95,9 @@ class MacScaner:
         intersection_list = list(set(cur_macs).intersection(set(last_macs)))
         incoming_list = list(set(cur_macs).difference(set(intersection_list)))
         leaving_list = list(set(last_macs).difference(set(intersection_list)))
-#        self.ProcessEvent('incoming', incoming_list)
-#        self.ProcessEvent('leaving', leaving_list)
-#        last_macs = cur_macs
+        self.ProcessEvent('incoming', incoming_list)
+        self.ProcessEvent('leaving', leaving_list)
+        last_macs = cur_macs
       time.sleep(3)
 
   def AddEventListener(self, type_, handler):
@@ -148,8 +142,12 @@ mqttc = mqtt.Client()
 mqttc.on_connect = on_connect
 mqttc.on_message = on_message
 mqttc.on_disconnect = on_disconnect
-mqttc.username_pw_set(username=mqtt_user, password = mqtt_pass)
-mqttc.connect(mqtt_host, mqtt_port, 60)
+try:
+  mqttc.username_pw_set(username=conf['mqtt']['user'], password = conf['mqtt']['pass'])
+  mqttc.connect(conf['mqtt']['host'], conf['mqtt']['port'], 60)
+except KeyError:
+  print "Failed to get mqtt config"
+  exit(-1)
 mqttc.loop_start()
 
 scan_mac = MacScaner()
