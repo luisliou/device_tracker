@@ -1,9 +1,37 @@
+#!/usr/bin/python
+
 import subprocess
 import time
 import logging
 import paho.mqtt.client as mqtt
 import yaml
 import codecs
+import sys, getopt
+import socket, errno
+
+
+def main(argv):
+    global config_file
+    global payload_home
+    config_file = "config.yaml"
+    payload_home = "home"
+    try:
+        opts, args = getopt.getopt(argv, "hc:n:")
+    except getopt.GetoptError:
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ("-h"):
+            print '(command) -c <config file> -n <home payload name>'
+            sys.exit(0)
+        elif opt in ("-c"):
+            config_file = arg
+        elif opt in ("-n"):
+            payload_home = arg
+        print 'Config file:', config_file
+#    sys.exit(0)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -57,7 +85,7 @@ class TPLinkRouter(BaseRouter):
     return ret[0].split()
 
 
-f = codecs.open(r'config.yaml', 'r',  encoding="utf-8")
+f = codecs.open(config_file, 'r',  encoding="utf-8")
 conf = yaml.load(f)
 f.close()
 #print(conf)
@@ -124,7 +152,7 @@ def OnIncoming(event_list):
     global mqttc
     for mac in event_list:
         topic = "device_tracker/" + mac.replace(':','')
-        mqttc.publish(topic, "home", True)
+        mqttc.publish(topic, payload_home, True)
         logging.info("published " + topic + "  home")
 #    print 'OnIncoming:'
 #    print event_list
@@ -145,8 +173,8 @@ mqttc.on_disconnect = on_disconnect
 try:
   mqttc.username_pw_set(username=conf['mqtt']['user'], password = conf['mqtt']['pass'])
   mqttc.connect(conf['mqtt']['host'], conf['mqtt']['port'], 60)
-except KeyError:
-  print "Failed to get mqtt config"
+except socket.error as e:
+  print "mqtt error"
   exit(-1)
 mqttc.loop_start()
 
