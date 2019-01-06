@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 
 import subprocess
 import time
@@ -9,6 +9,9 @@ import codecs
 import sys, getopt
 import socket, errno
 
+def MyWrite(log_info):
+#    sys.stdout.write(log_info)
+    sys.stderr.write(log_info + "\n")
 
 def main(argv):
     global config_file
@@ -21,7 +24,7 @@ def main(argv):
         sys.exit(2)
     for opt, arg in opts:
         if opt in ("-h"):
-            print '(command) -c <config file> -n <home payload name>'
+            #print "(command) -c <config file> -n <home payload name>"
             sys.exit(0)
         elif opt in ("-c"):
             config_file = arg
@@ -113,12 +116,16 @@ class MacScaner:
     self.__active = False
 
   def Run(self):
+    MyWrite("Test!")
     last_macs = list()
     while True:
       if self.__active == True:
         cur_macs=[]
         for router in all_routers:
+          MyWrite("Getting!")
           cur_macs += router.GetAllMACs()
+          MyWrite("End for one")
+        MyWrite("all" + str(cur_macs))
         print "all:", cur_macs
         intersection_list = list(set(cur_macs).intersection(set(last_macs)))
         incoming_list = list(set(cur_macs).difference(set(intersection_list)))
@@ -126,7 +133,9 @@ class MacScaner:
         self.ProcessEvent('incoming', incoming_list)
         self.ProcessEvent('leaving', leaving_list)
         last_macs = cur_macs
-      time.sleep(3)
+        time.sleep(60)
+      MyWrite("Waiting!")
+      time.sleep(1)
 
   def AddEventListener(self, type_, handler):
     handlerList = self.__handlers[type_] 
@@ -154,8 +163,8 @@ def OnIncoming(event_list):
         topic = "device_tracker/" + mac.replace(':','')
         mqttc.publish(topic, payload_home, True)
         logging.info("published " + topic + "  home")
-#    print 'OnIncoming:'
-#    print event_list
+    MyWrite('OnIncoming:')
+    MyWrite(str(event_list))
  
 def OnLeaving(event_list):
     global mqttc
@@ -163,8 +172,8 @@ def OnLeaving(event_list):
         topic = "device_tracker/" + mac.replace(':','')
         mqttc.publish(topic, "not_home", True)
         logging.info("published " + topic + "  away")
-#    print 'OnLeaving:'
-#    print event_list
+    MyWrite('OnLeaving:')
+    MyWrite(str(event_list))
 
 mqttc = mqtt.Client()
 mqttc.on_connect = on_connect
