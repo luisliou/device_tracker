@@ -66,23 +66,27 @@ class BaseRouter:
 
 command=" \"for k in \$(iwinfo | grep -Eo wlan[0-9]-?[0-9]?); do iwinfo \$k assoclist ;done | grep -Eo [0-9a-fA-F]{2}:.*:[0-9a-fA-F]{2}\""
 class OpenWRTRouter(BaseRouter):
-  def __init__(self, ip, args):
+  def __init__(self, ip, args, port='22'):
     self.ip = ip
+    if port == '':
+      self.port = 22
+    else:
+      self.port = port
   def GetAllMACs(self):
-#    print "OpenWRTRoute:", self.ip
-    wholecmd = 'ssh root@' + self.ip + command
+    wholecmd = 'ssh root@' + self.ip + ' -p ' + str(self.port) + ' ' + command
+    #print "OpenWRTRoute:", wholecmd
     p = subprocess.Popen(wholecmd, stdout=subprocess.PIPE, shell=True)
     ret = p.communicate()[0].split()
     print ret
     return ret
 
 class TPLinkRouter(BaseRouter):
-  def __init__(self, ip, args):
+  def __init__(self, ip, args, port):
     self.ip = ip
     self.args = args
   def GetAllMACs(self):
-#    print "TPLinkRouter:", self.ip, "Args:", self.args
     wholecmd = 'ssh root@' + self.ip + self.args
+    #print "TPLinkRouter:", self.ip, "Args:", self.args
     p = subprocess.Popen(wholecmd, stdout=subprocess.PIPE, shell=True)
     ret = p.communicate()
     return ret[0].split()
@@ -95,13 +99,18 @@ f.close()
 all_routers=[]
 for host in conf['hosts']:
   ip=host.values()[0]['ip']
+  print('ip:' + ip)
   cls=host.values()[0]['class']
   try:
     args=host.values()[0]['args']
   except KeyError:
     args=''
+  try:
+    port=host.values()[0]['port']
+  except KeyError:
+    port=''
   router_class=globals()[cls]
-  router=router_class(ip, args = args)
+  router=router_class(ip, args = args, port = port)
   all_routers.append(router)
 
 class MacScaner:
