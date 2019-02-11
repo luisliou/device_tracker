@@ -1,8 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 COOKIE=$1
 USER=$2
 PASS=$3
 IP=$4
+
+JQ=./jq-linux64
 
 get_post_data()
 {
@@ -18,7 +20,7 @@ if [ $# != 4 ]; then
   exit 1
 fi
 
-CMD=$(curl -c $COOKIE -H 'Referer:http://$IP/' -b $COOKIE http://$IP/data/version.json?option=logout -s | jq '.timeout')
+CMD=$(curl -c $COOKIE -H 'Referer:http://$IP/' -b $COOKIE http://$IP/data/version.json?option=logout -s | $JQ '.timeout')
 if [ $CMD != 'true' ]; then
   echo "Failed to reset cookie!"
   exit 1
@@ -29,19 +31,23 @@ CMD=$(echo "curl -b $COOKIE -c $COOKIE -X POST --data $POST_DATA http://$IP/data
 echo --------------------Logging---------------------------------------------------------------------
 echo "|"     $CMD
 echo ------------------------------------------------------------------------------------------------
-STATUS=$($CMD | jq '.status')
+STATUS=$($CMD | $JQ '.status')
+echo $STATUS
 
 if [ $STATUS == 0 ]; then
   echo Logged in successfully!
   echo AllMACs:
   CMD=$(curl -H 'Referer:http://'$IP'/' -c $COOKIE -b $COOKIE http://$IP/data/station.json?radioID=1 -s)
-  RET=$(echo $CMD | jq '.data')
+  RET=$(echo $CMD | $JQ '.data')
   if [ "$RET" == "null" ]; then
     echo "ERROR: Failed to get MACs. No data!"
     exit 1
   fi
-  echo $RET | jq '.[].mac' | sed -e 's/\"//g' -e 's/\-/:/g'
-#  CMD=$(curl -b $COOKIE -H 'Referer:http://$IP/' -b $COOKIE http://$IP/data/station.json?radioID=1 -s | jq '.data[].mac' | sed -e 's/\"//g' -e 's/\-/:/g')
+  CMD=$(curl -H 'Referer:http://'$IP'/' -c $COOKIE -b $COOKIE http://$IP/data/station.json?radioID=0 -s)
+  RET1=$(echo $CMD | $JQ '.data')
+  echo $RET | $JQ '.[].mac' | sed -e 's/\"//g' -e 's/\-/:/g'
+  echo $RET1 | $JQ '.[].mac' | sed -e 's/\"//g' -e 's/\-/:/g'
+#  CMD=$(curl -b $COOKIE -H 'Referer:http://$IP/' -b $COOKIE http://$IP/data/station.json?radioID=1 -s | $JQ '.data[].mac' | sed -e 's/\"//g' -e 's/\-/:/g')
 else
   echo Failed!
   echo Status:$STATUS
