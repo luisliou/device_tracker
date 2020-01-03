@@ -77,7 +77,6 @@ class OpenWRTRouter(BaseRouter):
     #print "OpenWRTRoute:", wholecmd
     p = subprocess.Popen(wholecmd, stdout=subprocess.PIPE, shell=True)
     ret = p.communicate()[0].split()
-    print ret
     return ret
 
 class TPLinkRouter(BaseRouter):
@@ -90,6 +89,17 @@ class TPLinkRouter(BaseRouter):
     p = subprocess.Popen(wholecmd, stdout=subprocess.PIPE, shell=True)
     ret = p.communicate()
     return ret[0].split()
+
+class RunCmd(BaseRouter):
+  def __init__(self, ip, args, port):
+    self.ip = ip
+    self.args = args
+  def GetAllMACs(self):
+    wholecmd = self.args
+    p = subprocess.Popen(wholecmd, stdout=subprocess.PIPE, shell=True)
+    ret = p.communicate()
+    return ret[0].split()
+
 
 
 f = codecs.open(config_file, 'r',  encoding="utf-8")
@@ -132,6 +142,7 @@ class MacScaner:
         cur_macs=[]
         for router in all_routers:
           MyWrite("Getting!")
+          MyWrite(str(router.GetAllMACs()))
           cur_macs += router.GetAllMACs()
           MyWrite("End for one")
         MyWrite("all" + str(cur_macs))
